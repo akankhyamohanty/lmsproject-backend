@@ -9,6 +9,7 @@ const profileController = require('../controllers/profileController');
 const courseController = require('../controllers/courseController'); 
 const assignmentController = require('../controllers/assignmentController');
 const examController = require('../controllers/examController');
+const salaryController = require('../controllers/salaryController');
 
 // 2. IMPORT MIDDLEWARE
 const { verifyFaculty } = require('../Middlewares/authMiddleware'); 
@@ -51,5 +52,6 @@ router.get('/assignments', verifyFaculty, assignmentController.getAssignments);
 router.post('/assignments', verifyFaculty, upload.single('file'), assignmentController.createAssignment);
 
 router.post('/exams', verifyFaculty, examController.createExam);
+router.get('/salary', verifyFaculty, salaryController.getSalaryData);
 
 module.exports = router;

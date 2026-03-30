@@ -1,4 +1,7 @@
 const AcademicModel = require('../models/academicModel');
+const db = require('../../config/db'); // 🎯 Required for dropdown queries
+
+// --- EXISTING ACADEMIC FUNCTIONS ---
 
 exports.getDepartments = async (req, res) => {
   try { res.json({ success: true, departments: await AcademicModel.getDepartments(req.user.code) }); } 
@@ -42,5 +45,34 @@ exports.addSyllabus = async (req, res) => {
   } catch (err) { 
     console.error("Add Syllabus Error:", err.sqlMessage || err); 
     res.status(500).json({ success: false, message: err.sqlMessage }); 
+  }
+};
+
+// ─── ⚡ DROPDOWN DATA FOR ASSIGN FACULTY MODAL ───
+
+exports.getAllSubjects = async (req, res) => {
+  try {
+    const [subjects] = await db.query(
+      `SELECT id, subject_name FROM subjects WHERE institute_code = ?`, 
+      [req.user.code]
+    );
+    res.status(200).json({ success: true, subjects });
+  } catch (error) {
+    console.error("Error fetching subjects:", error);
+    res.status(500).json({ success: false, message: "Failed to load subjects" });
+  }
+};
+
+exports.getAllFaculty = async (req, res) => {
+  try {
+    // 🎯 FIXED: Pulling exactly 'id' and 'name' from the 'faculty' table
+    const [faculty] = await db.query(
+      `SELECT id, name FROM faculty WHERE institute_code = ? AND status = 'Active'`, 
+      [req.user.code]
+    );
+    res.status(200).json({ success: true, faculty });
+  } catch (error) {
+    console.error("Error fetching faculty:", error);
+    res.status(500).json({ success: false, message: "Failed to load faculty" });
   }
 };

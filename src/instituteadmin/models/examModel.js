@@ -1,50 +1,63 @@
 const db = require('../../config/db');
 
 const ExamModel = {
-  async getExams(instituteCode) {
+  // 🎯 Updated to use instituteId so it matches Dashboard logic
+  async getExams(instituteId, instituteCode) {
     const [rows] = await db.query(
       `SELECT 
         id, title, subject, exam_type as examType, semester, batch, year, 
         exam_date as examDate, start_time as startTime, duration, 
         total_marks as totalMarks, passing_marks as passingMarks,
-        question_paper_path -- 👈 Added this so the frontend knows if a PDF exists
+        question_paper_path 
        FROM exams 
-       WHERE institute_code = ? 
+       WHERE institute_id = ? OR institute_code = ? 
        ORDER BY exam_date ASC, start_time ASC`,
-      [instituteCode]
+      [instituteId, instituteCode]
     );
     return rows;
   },
 
-  // 🚀 NEW: Fetch a single exam (used for downloading)
-  async getExamById(id, instituteCode) {
+  // 🎯 Updated to verify by numeric ID
+  async getExamById(id, instituteId) {
     const [rows] = await db.query(
-      `SELECT * FROM exams WHERE id = ? AND institute_code = ?`,
-      [id, instituteCode]
+      `SELECT * FROM exams WHERE id = ? AND institute_id = ?`,
+      [id, instituteId]
     );
     return rows[0];
   },
 
- async addExam(data) {
+  async addExam(data) {
     const query = `
       INSERT INTO exams (
-        institute_code, title, subject, exam_type, semester, batch, 
+        institute_id, institute_code, title, subject, exam_type, semester, batch, 
         year, exam_date, start_time, duration, total_marks, passing_marks, venue, question_paper_path
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
     const values = [
-      data.instituteCode, data.title, data.subject, data.examType, data.semester, 
-      data.batch, data.year, data.examDate, data.startTime, data.duration, 
-      data.totalMarks, data.passingMarks, data.venue, data.question_paper_path 
+      data.instituteId, // 🚀 THE FIX: Now saving the ID (4)
+      data.instituteCode, 
+      data.title, 
+      data.subject, 
+      data.examType, 
+      data.semester, 
+      data.batch, 
+      data.year, 
+      data.examDate, 
+      data.startTime, 
+      data.duration, 
+      data.totalMarks, 
+      data.passingMarks, 
+      data.venue, 
+      data.question_paper_path 
     ];
     const [result] = await db.query(query, values);
     return result.insertId;
-},
+  },
 
-  async deleteExam(id, instituteCode) {
+  async deleteExam(id, instituteId) {
     const [result] = await db.query(
-      `DELETE FROM exams WHERE id = ? AND institute_code = ?`,
-      [id, instituteCode]
+      `DELETE FROM exams WHERE id = ? AND institute_id = ?`,
+      [id, instituteId]
     );
     return result.affectedRows;
   }

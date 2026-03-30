@@ -22,8 +22,8 @@ const StudentModel = {
         gender,
         aadhar,
         pan,
-        documents, -- 👈 Add this
-        address    -- 👈 Add this
+        documents,
+        address
        FROM students
        WHERE institute_id = (SELECT id FROM institutes WHERE institute_code = ?)`,
       [instituteCode]
@@ -38,21 +38,21 @@ const StudentModel = {
         institute_id, student_code, first_name, last_name, 
         email, phone, documents, address, password_hash, status
       ) VALUES (
-        (SELECT id FROM institutes WHERE institute_code = ?), -- 👈 The Magic Lookup!
+        (SELECT id FROM institutes WHERE institute_code = ?), 
         ?, ?, ?, ?, ?, ?, ?, ?, ?
       )
     `;
     
     const values = [
-      data.instituteCode, // Resolves the foreign key error
+      data.instituteCode, 
       data.rollNo, 
       data.first_name, 
       data.last_name, 
       data.email, 
       data.phone,
-      '{}', // Satisfies strict JSON
-      '{}', // Satisfies strict JSON
-      'pending_setup_hash', 
+      '{}', 
+      '{}', 
+      data.password_hash, // 🌟 FIXED: Now it saves the secure hash from the controller!
       'Active' 
     ];
     

@@ -4,8 +4,11 @@ const fs = require('fs');
 
 exports.getExams = async (req, res) => {
   try {
+    // 🎯 Using both ID and Code for maximum query safety
+    const instituteId = req.user.id; 
     const instituteCode = req.user.code;
-    const exams = await ExamModel.getExams(instituteCode);
+    
+    const exams = await ExamModel.getExams(instituteId, instituteCode);
     res.status(200).json({ success: true, exams });
   } catch (err) {
     console.error("Get Exams Error:", err);
@@ -15,20 +18,27 @@ exports.getExams = async (req, res) => {
 
 exports.addExam = async (req, res) => {
   try {
+    // 🚀 THE FIX: Extracting the numeric ID (4) and the string Code (KII...)
+    const instituteId = req.user.id; 
     const instituteCode = req.user.code;
     
     const { title, subject, examDate, startTime } = req.body;
+    
     if (!title || !subject || !examDate || !startTime) {
       return res.status(400).json({ success: false, message: "Missing required exam details." });
     }
 
-    // 🚀 Grab the filename if Multer successfully saved a PDF
-    const filePath = req.file ? req.file.filename : null;
+    // Path handling for the PDF upload
+    const filePath = req.file ? `/uploads/exams/${req.file.filename}` : null;
 
-    // Pass the filePath to the model
+    // 🎯 Passing the ID to the model so it's no longer NULL in MySQL
     const id = await ExamModel.addExam({ 
+      instituteId,       // Added this
       instituteCode, 
-      ...req.body,
+      title,             // Explicitly passing fields to avoid req.body pollution
+      subject,
+      examDate,
+      startTime,
       question_paper_path: filePath 
     });
     
@@ -41,13 +51,21 @@ exports.addExam = async (req, res) => {
 
 exports.deleteExam = async (req, res) => {
   try {
-    const instituteCode = req.user.code;
+    const instituteId = req.user.id;
     const examId = req.params.id; 
 
-    // Optional: You could also delete the physical PDF file from the server here
-    // before deleting the database record, to save hard drive space!
+    // Retrieve exam to get file path before deletion
+    const exam = await ExamModel.getExamById(examId, instituteId);
+    
+    if (exam && exam.question_paper_path) {
+      // Logic to delete the physical PDF from the server
+      const fullPath = path.join(__dirname, '../../../../', exam.question_paper_path);
+      if (fs.existsSync(fullPath)) {
+        fs.unlinkSync(fullPath); 
+      }
+    }
 
-    const deleted = await ExamModel.deleteExam(examId, instituteCode);
+    const deleted = await ExamModel.deleteExam(examId, instituteId);
     
     if (!deleted) {
       return res.status(404).json({ success: false, message: "Exam not found or unauthorized." });
@@ -60,27 +78,23 @@ exports.deleteExam = async (req, res) => {
   }
 };
 
-// 🚀 NEW: Download Paper Logic
 exports.downloadPaper = async (req, res) => {
   try {
-    const instituteCode = req.user.code;
+    const instituteId = req.user.id;
     const examId = req.params.id;
 
-    // 1. Fetch the exam from the DB to get the filename
-    const exam = await ExamModel.getExamById(examId, instituteCode);
+    const exam = await ExamModel.getExamById(examId, instituteId);
     
     if (!exam || !exam.question_paper_path) {
       return res.status(404).json({ success: false, message: "PDF not found for this exam." });
     }
 
-    // 2. Find the physical file on the server
-    const filePath = path.join(__dirname, '../../../../uploads/question_papers', exam.question_paper_path);
+    const filePath = path.join(__dirname, '../../../../', exam.question_paper_path);
 
     if (!fs.existsSync(filePath)) {
       return res.status(404).json({ success: false, message: "File physically missing from server." });
     }
 
-    // 3. Send it to the user's browser as a download!
     res.download(filePath); 
   } catch (err) {
     console.error("Download Error:", err);
