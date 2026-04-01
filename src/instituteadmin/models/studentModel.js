@@ -1,8 +1,8 @@
 const db = require('../../config/db');
 
 const StudentModel = {
-  // Fetch existing students from the complex table
-  async getStudentsByInstitute(instituteCode) {
+  // Fetch existing students (Expanded to grab all new data)
+  async getStudentsByInstitute(instituteId) {
     const [rows] = await db.query(
       `SELECT 
         id, 
@@ -25,37 +25,47 @@ const StudentModel = {
         documents,
         address
        FROM students
-       WHERE institute_id = (SELECT id FROM institutes WHERE institute_code = ?)`,
-      [instituteCode]
+       WHERE institute_id = ?
+       ORDER BY created_at DESC`,
+      [instituteId] // 🚀 OPTIMIZED: Using direct ID instead of sub-query
     );
     return rows;
   },
 
-  // Add a new student to the complex table
+  // Add a new student (Now catches ALL 20 fields from React)
   async createStudent(data) {
     const query = `
       INSERT INTO students (
-        institute_id, student_code, first_name, last_name, 
-        email, phone, documents, address, password_hash, status
-      ) VALUES (
-        (SELECT id FROM institutes WHERE institute_code = ?), 
-        ?, ?, ?, ?, ?, ?, ?, ?, ?
-      )
+        institute_id, student_code, type, first_name, last_name, 
+        email, phone, dob, gender, aadhar, pan, 
+        course, standard_name, section, roll_no, academic_year, 
+        documents, address, status, password_hash
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
     
     const values = [
-      data.instituteCode, 
-      data.rollNo, 
-      data.first_name, 
-      data.last_name, 
-      data.email, 
+      data.instituteId,
+      data.studentCode,
+      data.type,
+      data.firstName,
+      data.lastName,
+      data.email,
       data.phone,
-      '{}', 
-      '{}', 
-      data.password_hash, // 🌟 FIXED: Now it saves the secure hash from the controller!
-      'Active' 
+      data.dob,
+      data.gender,
+      data.aadhar,
+      data.pan,
+      data.course,
+      data.standard,
+      data.section,
+      data.rollNo,
+      data.year,
+      data.documents, // 🚀 This will now save the parsed JSON string from the controller
+      data.address,   // 🚀 This will now save the parsed JSON string from the controller
+      data.status,
+      data.passwordHash
     ];
-    
+
     const [result] = await db.query(query, values);
     return result;
   }

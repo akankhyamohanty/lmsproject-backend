@@ -6,7 +6,7 @@ exports.getUpcomingExams = async (req, res) => {
 
     console.log(`\n--- FETCHING EXAMS FOR STUDENT ${studentId} ---`);
 
-    // 🎯 We removed the 'institute_code' filter. 
+    //  We removed the 'institute_code' filter. 
     // Now it just looks for ANY exam that is scheduled for today or the future!
     const [exams] = await db.query(`
       SELECT 
@@ -26,7 +26,7 @@ exports.getUpcomingExams = async (req, res) => {
 
     res.status(200).json({ success: true, exams });
   } catch (error) {
-    console.error("💥 Error fetching upcoming exams:", error);
+    console.error(" Error fetching upcoming exams:", error);
     res.status(500).json({ success: false, message: "Failed to load upcoming exams" });
   }
 };
@@ -64,7 +64,7 @@ exports.getExamResults = async (req, res) => {
 
     res.status(200).json({ success: true, results });
   } catch (error) {
-    console.error("💥 Error fetching exam results:", error);
+    console.error(" Error fetching exam results:", error);
     res.status(500).json({ success: false, message: "Failed to load exam results" });
   }
 };

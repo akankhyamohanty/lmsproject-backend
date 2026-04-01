@@ -1,7 +1,7 @@
 const db = require('../../config/db');
 
 const ExamModel = {
-  // 🎯 Updated to use instituteId so it matches Dashboard logic
+  //  Updated to use instituteId so it matches Dashboard logic
   async getExams(instituteId, instituteCode) {
     const [rows] = await db.query(
       `SELECT 
@@ -17,7 +17,7 @@ const ExamModel = {
     return rows;
   },
 
-  // 🎯 Updated to verify by numeric ID
+  //  Updated to verify by numeric ID
   async getExamById(id, instituteId) {
     const [rows] = await db.query(
       `SELECT * FROM exams WHERE id = ? AND institute_id = ?`,
@@ -34,7 +34,7 @@ const ExamModel = {
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
     const values = [
-      data.instituteId, // 🚀 THE FIX: Now saving the ID (4)
+      data.instituteId, //  THE FIX: Now saving the ID (4)
       data.instituteCode, 
       data.title, 
       data.subject, 

@@ -8,7 +8,7 @@ exports.getBatches = async (req, res) => {
     const batches = await BatchModel.getAll(req.user.code);
     res.json({ success: true, batches });
   } catch (err) {
-    console.error("💥 SQL ERROR IN getBatches:", err);
+    console.error("SQL ERROR IN getBatches:", err);
     res.status(500).json({ success: false, message: "Server Error" });
   }
 };
@@ -19,7 +19,7 @@ exports.getBatchById = async (req, res) => {
     if (!batch) return res.status(404).json({ success: false, message: "Not found" });
     res.json({ success: true, batch });
   } catch (err) {
-    console.error("💥 SQL ERROR IN getBatchById:", err);
+    console.error("SQL ERROR IN getBatchById:", err);
     res.status(500).json({ success: false, message: "Server Error" });
   }
 };
@@ -31,7 +31,7 @@ exports.createBatch = async (req, res) => {
     const batchId = await BatchModel.create(batchData, sections, studentIds);
     res.status(201).json({ success: true, batchId });
   } catch (err) {
-    console.error("💥 SQL ERROR IN createBatch:", err);
+    console.error("SQL ERROR IN createBatch:", err);
     res.status(500).json({ success: false, message: "Creation failed" });
   }
 };
@@ -41,7 +41,7 @@ exports.deleteBatch = async (req, res) => {
     await BatchModel.delete(req.params.id, req.user.code);
     res.json({ success: true, message: "Deleted" });
   } catch (err) {
-    console.error("💥 SQL ERROR IN deleteBatch:", err);
+    console.error("SQL ERROR IN deleteBatch:", err);
     res.status(500).json({ success: false, message: "Delete failed" });
   }
 };
@@ -97,7 +97,7 @@ exports.assignFacultyToBatch = async (req, res) => {
 
   } catch (err) {
     await connection.rollback();
-    console.error("💥 ADMIN POWER FAILED:", err);
+    console.error("ADMIN POWER FAILED:", err);
     res.status(500).json({ success: false, message: "Assignment failed: " + err.message });
   } finally {
     connection.release();

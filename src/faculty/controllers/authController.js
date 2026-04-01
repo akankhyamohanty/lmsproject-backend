@@ -6,7 +6,7 @@ exports.login = async (req, res) => {
   const { email, password, instituteCode } = req.body;
 
   console.log("-----------------------------------------");
-  console.log(" 🔑 NEW FACULTY LOGIN ATTEMPT");
+  console.log("  NEW FACULTY LOGIN ATTEMPT");
   console.log("Email:", email);
   console.log("-----------------------------------------");
 
@@ -59,13 +59,13 @@ exports.login = async (req, res) => {
       { expiresIn: '24h' }
     );
 
-    // 🎯 2. THE FIX: Set the Token as an HTTP-Only Cookie
-   // 🎯 2. THE FIX: Set the Token as an HTTP-Only Cookie
+    //  2. THE FIX: Set the Token as an HTTP-Only Cookie
+   //  2. THE FIX: Set the Token as an HTTP-Only Cookie
 res.cookie('token', token, {
   httpOnly: true,
-  secure: false,       // 🎯 FORCE false for localhost
-  sameSite: 'lax',     // 🎯 MUST be 'lax' for localhost cross-port
-  path: '/',           // 🎯 CRITICAL: This makes the cookie visible to /api/faculty/exams
+  secure: false,       //  FORCE false for localhost
+  sameSite: 'lax',     //  MUST be 'lax' for localhost cross-port
+  path: '/',           //  CRITICAL: This makes the cookie visible to /api/faculty/exams
   maxAge: 24 * 60 * 60 * 1000 
 });
     await AuthModel.updateLastLogin(faculty.id);
@@ -85,7 +85,7 @@ res.cookie('token', token, {
     });
 
   } catch (err) {
-    console.error(" ❌ FATAL CRASH:", err.message);
+    console.error("FATAL CRASH:", err.message);
     res.status(500).json({ success: false, message: err.message });
   }
 };

@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const notificationController = require('../controllers/notificationController');
 
-// 🎯 Import the exact function name revealed by our debug logs!
+//  Import the exact function name revealed by our debug logs!
 const { verifyFaculty } = require('../Middlewares/authMiddleware'); 
 
 // --- Routes ---

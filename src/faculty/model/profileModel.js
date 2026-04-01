@@ -16,7 +16,7 @@ class FacultyProfile {
          f.specializations,
          f.designation,
          f.dept,
-         i.organisation->>'$.name' AS institute_name  -- 👈 Extracting from JSON!
+         i.organisation->>'$.name' AS institute_name  --  Extracting from JSON!
        FROM faculty f
        LEFT JOIN institutes i ON f.institute_code = i.institute_code
        WHERE f.id = ?`,

@@ -37,17 +37,17 @@ router.get('/attendance/history', verifyFaculty, attendanceController.getAttenda
 router.get('/profile', verifyFaculty, profileController.getProfile);
 
 // --- COURSE MANAGEMENT ---
-// 🎯 Basic Course CRUD
+//  Basic Course CRUD
 router.get('/courses', verifyFaculty, courseController.getMyCourses);           // List all
 router.get('/courses/:id', verifyFaculty, courseController.getCourseById);      // View details
 router.post('/courses', verifyFaculty, courseController.createCourse);          // Create new
 router.delete('/courses/:id', verifyFaculty, courseController.deleteCourse);    // Remove course
 
-// 🎯 Course Content (Modules & Items)
+//  Course Content (Modules & Items)
 router.get('/courses/:courseId/modules', verifyFaculty, courseController.getModules);   // Load modules
 router.post('/courses/:courseId/modules', verifyFaculty, courseController.saveModules); // Sync modules
 
-// --- 🎯 ASSIGNMENTS (The missing piece!) ---
+// ---  ASSIGNMENTS (The missing piece!) ---
 router.get('/assignments', verifyFaculty, assignmentController.getAssignments);
 router.post('/assignments', verifyFaculty, upload.single('file'), assignmentController.createAssignment);
 

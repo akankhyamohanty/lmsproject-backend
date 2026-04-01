@@ -48,8 +48,9 @@ const InstituteModel = {
 
   async create({ organisation, directors, legal, branches, institute_code, admin_email, password_hash }) {
     const [result] = await db.query(
+      // 🚀 FIXED: Changed 'admin_password_hash' to 'password_hash' below
       `INSERT INTO institutes 
-       (organisation, directors, legal, branches, institute_code, admin_email, admin_password_hash, status) 
+       (organisation, directors, legal, branches, institute_code, admin_email, password_hash, status) 
        VALUES (?, ?, ?, ?, ?, ?, ?, 'Active')`,
       [
         JSON.stringify(organisation), 
@@ -58,7 +59,7 @@ const InstituteModel = {
         JSON.stringify(branches),
         institute_code,
         admin_email,
-        password_hash
+        password_hash // Maps perfectly to the updated column
       ]
     );
     return result.insertId;

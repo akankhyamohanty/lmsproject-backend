@@ -23,8 +23,8 @@ exports.instituteLogin = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Your institute is currently inactive or suspended' });
     }
 
-    // 4. Verify the Password
-    const isMatch = await bcrypt.compare(password, institute.admin_password_hash);
+    // 4. 🚀 FIX: Verify the Password against the new 'password_hash' column
+    const isMatch = await bcrypt.compare(password, institute.password_hash);
     if (!isMatch) {
       return res.status(401).json({ success: false, message: 'Invalid Password' });
     }

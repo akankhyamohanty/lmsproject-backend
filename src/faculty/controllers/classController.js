@@ -46,7 +46,7 @@ exports.saveAttendance = async (req, res) => {
 
   } catch (err) {
     // This will print the EXACT reason (e.g. Foreign Key fail) in your VS Code terminal
-    console.error("❌ DATABASE ERROR:", err.sqlMessage || err.message);
+    console.error(" DATABASE ERROR:", err.sqlMessage || err.message);
 
     res.status(500).json({ 
       success: false, 

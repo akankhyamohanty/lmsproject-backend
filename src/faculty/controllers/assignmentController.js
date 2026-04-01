@@ -42,7 +42,7 @@ exports.getAssignments = async (req, res) => {
   try {
     const instituteCode = req.user.institute_code || req.user.code;
     
-    // 🎯 We join BOTH the courses and course_modules tables here
+    //  We join BOTH the courses and course_modules tables here
     // so your React table gets 'course_name' and 'module_name'
     const query = `
       SELECT 

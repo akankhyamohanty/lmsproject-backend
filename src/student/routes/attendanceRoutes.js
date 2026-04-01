@@ -2,9 +2,9 @@ const express = require('express');
 const router = express.Router();
 const attCtrl = require('../controllers/attendanceController');
 
-// 🛡️ Middleware: Ensure this 'protect' function allows BOTH Faculty and Students
+//  Middleware: Ensure this 'protect' function allows BOTH Faculty and Students
 // If it only allows students, your Faculty Portal will hit 403 Forbidden errors!
-const { verifyStudent: protect } = require('../middlewares/authMiddleware'); 
+const { verifyStudent: protect } = require('../middlewares/authMiddleware.js'); 
 
 // ─── 1. SHARED ROUTES ─────────────────────────────────────────────
 // Used by both Faculty and Students to check their personal workday status

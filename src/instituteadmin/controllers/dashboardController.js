@@ -2,7 +2,7 @@ const db = require('../../config/db');
 
 exports.getDashboardSummary = async (req, res) => {
   try {
-    // 🕵️‍♂️ DEBUG LOGS
+    // DEBUG LOGS
     console.log("\n DASHBOARD DATA CHECK ---");
     const instId = req.user.id || req.user.institute_id || req.user.instituteId;
     const instCode = req.user.code; 
@@ -22,7 +22,7 @@ exports.getDashboardSummary = async (req, res) => {
       [feesDueRows],
       [pendingStudentRows] 
     ] = await Promise.all([
-      // 🎯 Only count 'Active' students for the total students card
+      //  Only count 'Active' students for the total students card
       db.query('SELECT COUNT(*) as count FROM students WHERE institute_id = ? AND status = "Active"', [instId]),
       
       db.query('SELECT COUNT(*) as count FROM faculty WHERE institute_id = ?', [instId]).catch(() => [[{ count: 0 }]]),
@@ -31,7 +31,7 @@ exports.getDashboardSummary = async (req, res) => {
       
       db.query('SELECT SUM(total_amount - paid_amount) as total FROM fees WHERE institute_id = ? AND status != "Paid"', [instId]),
       
-      // 🎯 REAL PENDING DATA: Count students where status is 'Pending'
+      //  REAL PENDING DATA: Count students where status is 'Pending'
       db.query('SELECT COUNT(*) as count FROM students WHERE institute_id = ? AND status = "Pending"', [instId])
     ]);
 
@@ -57,8 +57,8 @@ exports.getDashboardSummary = async (req, res) => {
       success: true, 
       stats: {
         faculties: facultyRows[0]?.count || 0,
-        pending: pendingStudentRows[0]?.count || 0, // ✅ NOW DYNAMIC
-        students: activeStudentRows[0]?.count || 0, // ✅ NOW DYNAMIC (Active only)
+        pending: pendingStudentRows[0]?.count || 0, 
+        students: activeStudentRows[0]?.count || 0, 
         feesCollected: feesCollectedRows[0]?.total || 0,
         feesDue: feesDueRows[0]?.total || 0,
         attendance: "94%" // Placeholder until we build the Attendance Module
@@ -75,7 +75,7 @@ exports.getDashboardSummary = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("💥 Dashboard Fetch Error:", error);
+    console.error("Dashboard Fetch Error:", error);
     res.status(500).json({ success: false, message: "Failed to load dashboard data" });
   }
 };

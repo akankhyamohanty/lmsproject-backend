@@ -2,7 +2,7 @@ const db = require('../../config/db');
 
 exports.getSalaryData = async (req, res) => {
     try {
-        // 🎯 This ID comes from the decoded JWT cookie (verifyFaculty middleware)
+        // This ID comes from the decoded JWT cookie (verifyFaculty middleware)
         // It ensures the faculty only sees THEIR OWN data.
         const facultyId = req.user.id; 
 
@@ -51,7 +51,7 @@ exports.getSalaryData = async (req, res) => {
         });
 
     } catch (err) {
-        console.error("❌ Salary Fetch Error:", err);
+        console.error("Salary Fetch Error:", err);
         res.status(500).json({ 
             success: false, 
             message: "Internal Server Error while fetching salary data",

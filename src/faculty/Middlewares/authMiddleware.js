@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 
 const verifyFaculty = (req, res, next) => {
-  console.log("\n---  MIDDLEWARE: AUTH CHECK ---");
+  console.log("\n  MIDDLEWARE: AUTH CHECK ");
   
   // 1. Try to grab the token from cookies FIRST
   let token = req.cookies?.token; 

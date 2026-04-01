@@ -1,8 +1,3 @@
-// =============================================================
-// MODEL — adminModel.js
-// All MySQL queries + business logic for superadmin auth
-// =============================================================
-
 const bcrypt = require('bcryptjs');
 const db = require('../../config/db');
 

@@ -7,8 +7,9 @@ exports.getStructures = async (req, res) => {
     const structures = await FeeModel.getAllStructures(instituteId);
     res.json({ success: true, structures });
   } catch (err) {
-    console.error("SQL ERROR in getStructures:", err.message);
-    res.status(500).json({ success: false, message: "Server Error" });
+    // 🛡️ FAULT TOLERANCE: If table doesn't exist, send empty array instead of 500 error
+    console.warn("[FeeController] SQL WARNING in getStructures (Table might be missing):", err.message);
+    res.json({ success: true, structures: [] }); 
   }
 };
 
@@ -31,7 +32,7 @@ exports.addStructure = async (req, res) => {
     const id = await FeeModel.createStructure(dataToInsert);
     res.status(201).json({ success: true, id });
   } catch (err) {
-    console.error("💥 SQL ERROR in addStructure:", err.message);
+    console.error("SQL ERROR in addStructure:", err.message);
     res.status(500).json({ 
       success: false, 
       message: "Creation failed", 
@@ -89,8 +90,9 @@ exports.getNotifications = async (req, res) => {
     const notifications = await FeeModel.getAllNotifications(instituteId);
     res.json({ success: true, notifications });
   } catch (err) {
-    console.error(" SQL ERROR in getNotifications:", err.message);
-    res.status(500).json({ success: false, message: "Server Error" });
+    // 🛡️ FAULT TOLERANCE: If table doesn't exist, send empty array instead of 500 error
+    console.warn("[FeeController] SQL WARNING in getNotifications (Table might be missing):", err.message);
+    res.json({ success: true, notifications: [] }); 
   }
 };
 

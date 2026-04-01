@@ -1,5 +1,6 @@
-const InstituteModel = require('../model/instituteModel'); // Make sure this path is correct
-const bcrypt = require('bcrypt'); // Needed to hash the default password
+const InstituteModel = require('../model/instituteModel'); 
+const bcrypt = require('bcrypt');
+const db = require('../../config/db'); // 🚀 ADDED: Needed for the deep-dive multi-table queries
 
 exports.getAllInstitutes = async (req, res) => {
   try {
@@ -24,27 +25,21 @@ exports.getInstituteById = async (req, res) => {
 
 exports.addInstitute = async (req, res) => {
   try {
-    // 1. We now expect the nested JSON objects from your React form
     const { organisation, directors, legal, branches } = req.body;
 
-    // 2. Validate that at least the basic organisation info exists
     if (!organisation || !organisation.name || !organisation.email) {
       return res.status(400).json({ success: false, message: 'Organisation name and email are required' });
     }
 
-    // 3. Check if email already exists
     if (await InstituteModel.emailExists(organisation.email)) {
       return res.status(409).json({ success: false, message: 'Institute with this email already exists' });
     }
 
-    // 4. Generate Institute Code (First 3 letters of name + PIN code)
     const instituteCode = (organisation.name.substring(0, 3).toUpperCase()) + (organisation.pin || '000');
 
-    // 5. Generate default password hash ('password123') for the Institute Admin
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash("password123", salt);
 
-    // 6. Save everything to the database
     const id = await InstituteModel.create({ 
       organisation, 
       directors, 
@@ -75,14 +70,7 @@ exports.updateInstitute = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Institute not found' });
     }
     
-    // We expect the nested JSON objects here too
     const { organisation, directors, legal, branches } = req.body;
-
-    // We skip email existence check here for simplicity, but you can add it back if needed
-    // You will need an update method in your InstituteModel to handle the JSON updates
-    
-    // NOTE: If you haven't written the `update` method in InstituteModel yet to handle JSON,
-    // this route will need that model update to function.
     res.status(200).json({ success: true, message: 'Institute updated successfully (Placeholder)' });
   } catch (err) {
     console.error('[InstituteController] updateInstitute:', err.message);
@@ -93,7 +81,7 @@ exports.updateInstitute = async (req, res) => {
 exports.toggleStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    const { is_active } = req.body; // Frontend sends boolean true/false
+    const { is_active } = req.body; 
     
     if (is_active === undefined) {
       return res.status(400).json({ success: false, message: 'is_active is required' });
@@ -120,5 +108,76 @@ exports.deleteInstitute = async (req, res) => {
   } catch (err) {
     console.error('[InstituteController] deleteInstitute:', err.message);
     res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+// ============================================================================
+// 🚀 NEW: Get Full Institute Details (For Super Admin Dashboard Mini-View)
+// ============================================================================
+exports.getFullInstituteDetails = async (req, res) => {
+  const instId = req.params.id;
+
+  try {
+    // 1. Fetch the base institute record using your existing model logic 
+    // (This handles parsing the JSON columns like organisation, directors, etc.)
+    const baseInstitute = await InstituteModel.findById(instId);
+    
+    if (!baseInstitute) {
+      return res.status(404).json({ success: false, message: "Institute not found" });
+    }
+
+    // 2. Fetch all related data simultaneously for maximum speed
+    // Note: Adjust table/column names if they differ slightly in your MySQL database
+    const [
+      [students],
+      [faculty],
+      [batches],
+      [exams],
+      [expensesAgg],
+      [feesAgg]
+    ] = await Promise.all([
+      db.query(`SELECT id, name, roll_no AS roll, batch, status FROM students WHERE institute_id = ? LIMIT 15`, [instId]),
+      db.query(`SELECT id, name, designation, dept AS subject, status FROM faculty WHERE institute_id = ? LIMIT 15`, [instId]),
+      db.query(`
+        SELECT id, name, course, status, 
+        (SELECT COUNT(*) FROM students WHERE batch = batches.name AND institute_id = ?) AS studentCount 
+        FROM batches WHERE institute_id = ? LIMIT 15
+      `, [instId, instId]),
+      db.query(`SELECT id, title, exam_date AS date, batch, subject, status FROM exams WHERE institute_id = ? ORDER BY exam_date DESC LIMIT 10`, [instId]),
+      db.query(`SELECT SUM(amount) AS totalExpenses FROM expenses WHERE institute_id = ?`, [instId]),
+      db.query(`SELECT SUM(paid_amount) AS totalRevenue FROM fee_payments WHERE institute_id = ?`, [instId]) // Assuming your table is fee_payments
+    ]);
+
+    // 3. Mold the data into the exact format the React UI expects
+    const fullDetails = {
+      ...baseInstitute, // Spreads organisation, directors, etc.
+      name: baseInstitute.organisation?.name || baseInstitute.name, // Safely extract name from JSON if needed
+      city: baseInstitute.organisation?.city || "",
+      
+      // Lists for the tables
+      studentsList: students,
+      facultyList: faculty,
+      batchesList: batches,
+      examsList: exams,
+      
+      // Stats for the top row pills
+      totalStudents: students.length, 
+      totalFaculty: faculty.length,
+      totalBatches: batches.length,
+      
+      // Financials
+      totalExpenses: expensesAgg[0]?.totalExpenses || 0,
+      revenueCollected: feesAgg[0]?.totalRevenue || 0,
+    };
+
+    // 4. Send it to the React Dashboard
+    res.json({
+      success: true,
+      data: fullDetails
+    });
+
+  } catch (error) {
+    console.error("[InstituteController] getFullInstituteDetails:", error);
+    res.status(500).json({ success: false, message: "Failed to load complete institute details." });
   }
 };

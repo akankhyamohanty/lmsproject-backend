@@ -8,9 +8,9 @@ exports.createExam = async (req, res) => {
   try {
     const { examDetails, questions } = req.body;
 
-    // 🛑 SAFETY CHECK: Did React actually send examDetails?
+    //  SAFETY CHECK: Did React actually send examDetails?
     if (!examDetails) {
-      console.error("❌ CRASH PREVENTED: React did not send 'examDetails' in req.body!");
+      console.error(" CRASH PREVENTED: React did not send 'examDetails' in req.body!");
       return res.status(400).json({ success: false, message: "Missing exam details payload" });
     }
 
@@ -46,11 +46,11 @@ exports.createExam = async (req, res) => {
       null 
     ];
 
-    // 🎯 CHOKE POINT 1: Creating Exam Header
+    //  CHOKE POINT 1: Creating Exam Header
     const examResult = await Exam.create(examValues);
     const newExamId = examResult.insertId;
 
-    console.log("✅ Step 1: Exam Header Saved. ID is:", newExamId);
+    console.log(" Step 1: Exam Header Saved. ID is:", newExamId);
 
     if (questions && questions.length > 0) {
       const qValues = questions.map(q => [
@@ -62,23 +62,23 @@ exports.createExam = async (req, res) => {
         q.answer || ''
       ]);
 
-      // 🎯 CHOKE POINT 2: Creating Questions
+      //  CHOKE POINT 2: Creating Questions
       await Exam.createQuestions(qValues);
       
-      console.log("✅ Step 2: Questions Successfully inserted into DB!");
+      console.log(" Step 2: Questions Successfully inserted into DB!");
       return res.status(201).json({ success: true, message: "Exam and questions scheduled successfully!" });
     }
 
     return res.status(201).json({ success: true, message: "Exam scheduled successfully (No questions attached)." });
 
   } catch (error) {
-    // 📢 LOUD ERROR LOGGING
-    console.error("\n❌ ======================================");
-    console.error("❌ CRITICAL DATABASE ERROR IN createExam!");
-    console.error("❌ ERROR CODE:", error.code);
-    console.error("❌ ERROR MESSAGE:", error.message);
-    console.error("❌ FULL DETAILS:", error);
-    console.error("❌ ======================================\n");
+    //  LOUD ERROR LOGGING
+    console.error("\n ======================================");
+    console.error(" CRITICAL DATABASE ERROR IN createExam!");
+    console.error(" ERROR CODE:", error.code);
+    console.error(" ERROR MESSAGE:", error.message);
+    console.error(" FULL DETAILS:", error);
+    console.error(" ======================================\n");
     res.status(500).json({ success: false, message: "Internal server error", error: error.message });
   }
 };
@@ -90,7 +90,7 @@ exports.getFacultyExams = async (req, res) => {
   try {
     const instituteCode = req.user?.institute_code || 'INST001'; 
     
-    // 🎯 CHOKE POINT 3: Fetching data
+    //  CHOKE POINT 3: Fetching data
     const query = `
       SELECT id, title, batch, subject 
       FROM exams 
@@ -100,18 +100,18 @@ exports.getFacultyExams = async (req, res) => {
     
     db.query(query, [instituteCode], (err, results) => {
       if (err) {
-        // 📢 LOUD ERROR LOGGING
-        console.error("\n❌ ======================================");
-        console.error("❌ CRITICAL DATABASE ERROR IN getFacultyExams!");
-        console.error("❌ SQL QUERY:", query);
-        console.error("❌ ERROR MESSAGE:", err.message);
-        console.error("❌ ======================================\n");
+        //  LOUD ERROR LOGGING
+        console.error("\n ======================================");
+        console.error(" CRITICAL DATABASE ERROR IN getFacultyExams!");
+        console.error(" SQL QUERY:", query);
+        console.error(" ERROR MESSAGE:", err.message);
+        console.error(" ======================================\n");
         return res.status(500).json({ success: false, message: "Database error", error: err.message });
       }
       res.status(200).json({ success: true, data: results });
     });
   } catch (error) {
-    console.error("❌ Server Error fetching exams:", error);
+    console.error(" Server Error fetching exams:", error);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };

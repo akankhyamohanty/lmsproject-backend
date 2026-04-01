@@ -48,7 +48,7 @@ exports.generateReport = async (req, res) => {
     });
 
   } catch (err) {
-    console.error("💥 SQL ERROR in generateReport Controller:", err);
+    console.error("SQL ERROR in generateReport Controller:", err);
     res.status(500).json({ 
         success: false, 
         message: "Internal Server Error while generating report." 

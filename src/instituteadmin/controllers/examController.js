@@ -4,7 +4,7 @@ const fs = require('fs');
 
 exports.getExams = async (req, res) => {
   try {
-    // 🎯 Using both ID and Code for maximum query safety
+    //  Using both ID and Code for maximum query safety
     const instituteId = req.user.id; 
     const instituteCode = req.user.code;
     
@@ -18,7 +18,7 @@ exports.getExams = async (req, res) => {
 
 exports.addExam = async (req, res) => {
   try {
-    // 🚀 THE FIX: Extracting the numeric ID (4) and the string Code (KII...)
+    //  THE FIX: Extracting the numeric ID (4) and the string Code (KII...)
     const instituteId = req.user.id; 
     const instituteCode = req.user.code;
     
@@ -31,7 +31,7 @@ exports.addExam = async (req, res) => {
     // Path handling for the PDF upload
     const filePath = req.file ? `/uploads/exams/${req.file.filename}` : null;
 
-    // 🎯 Passing the ID to the model so it's no longer NULL in MySQL
+    //  Passing the ID to the model so it's no longer NULL in MySQL
     const id = await ExamModel.addExam({ 
       instituteId,       // Added this
       instituteCode, 

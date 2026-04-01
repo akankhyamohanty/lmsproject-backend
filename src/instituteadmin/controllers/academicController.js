@@ -1,5 +1,5 @@
 const AcademicModel = require('../models/academicModel');
-const db = require('../../config/db'); // 🎯 Required for dropdown queries
+const db = require('../../config/db'); //  Required for dropdown queries
 
 // --- EXISTING ACADEMIC FUNCTIONS ---
 
@@ -48,7 +48,7 @@ exports.addSyllabus = async (req, res) => {
   }
 };
 
-// ─── ⚡ DROPDOWN DATA FOR ASSIGN FACULTY MODAL ───
+// ─── DROPDOWN DATA FOR ASSIGN FACULTY MODAL ───
 
 exports.getAllSubjects = async (req, res) => {
   try {
@@ -65,7 +65,7 @@ exports.getAllSubjects = async (req, res) => {
 
 exports.getAllFaculty = async (req, res) => {
   try {
-    // 🎯 FIXED: Pulling exactly 'id' and 'name' from the 'faculty' table
+    // FIXED: Pulling exactly 'id' and 'name' from the 'faculty' table
     const [faculty] = await db.query(
       `SELECT id, name FROM faculty WHERE institute_code = ? AND status = 'Active'`, 
       [req.user.code]

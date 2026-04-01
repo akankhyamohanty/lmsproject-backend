@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const classController = require('../controllers/classController');
-const { verifyFaculty } = require('../middlewares/authMiddleware');
+const { verifyFaculty } = require('../Middlewares/authMiddleware');
 
 // Main list of classes
 router.get('/my-classes', verifyFaculty, classController.getMyClasses);

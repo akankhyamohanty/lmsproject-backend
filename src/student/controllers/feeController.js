@@ -5,7 +5,7 @@ exports.getStudentFees = async (req, res) => {
   try {
     const studentId = req.user.id;
 
-    // 🎯 UPDATED: Added fee_title to the query
+    //  UPDATED: Added fee_title to the query
     const [fees] = await db.query(`
       SELECT 
         id, 
@@ -22,7 +22,7 @@ exports.getStudentFees = async (req, res) => {
 
     res.status(200).json({ success: true, fees });
   } catch (error) {
-    console.error("💥 Error fetching student fees:", error);
+    console.error(" Error fetching student fees:", error);
     res.status(500).json({ success: false, message: "Failed to load fees" });
   }
 };
@@ -61,7 +61,7 @@ exports.payFee = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("💥 Error processing payment:", error);
+    console.error(" Error processing payment:", error);
     res.status(500).json({ success: false, message: "Payment failed to process." });
   }
 };

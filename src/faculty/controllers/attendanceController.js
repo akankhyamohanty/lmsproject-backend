@@ -96,7 +96,7 @@ exports.handlePunch = async (req, res) => {
         );
       }
 
-      console.log(`✅ Punch-in saved as PENDING for user ${userId}`);
+      console.log(` Punch-in saved as PENDING for user ${userId}`);
       return res.json({ success: true, message: "Punch-in requested. Waiting for Admin approval." });
     } 
 
@@ -119,7 +119,7 @@ exports.handlePunch = async (req, res) => {
         [time, userId, today]
       );
       
-      console.log(`✅ Punch-out saved for user ${userId}`);
+      console.log(` Punch-out saved for user ${userId}`);
       return res.json({ success: true, message: "Punched out successfully" });
     }
 

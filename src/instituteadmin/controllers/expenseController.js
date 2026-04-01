@@ -5,7 +5,7 @@ exports.getExpenses = async (req, res) => {
     const expenses = await ExpenseModel.getAll(req.user.code);
     res.json({ success: true, expenses });
   } catch (err) {
-    console.error("💥 SQL ERROR:", err);
+    console.error(" SQL ERROR:", err);
     res.status(500).json({ success: false, message: "Server Error" });
   }
 };

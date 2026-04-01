@@ -36,11 +36,11 @@ exports.updateProfile = async (req, res) => {
     
     await FacultyProfile.update(facultyId, req.body);
 
-    console.log(`✅ Profile updated for Faculty ID: ${facultyId}`);
+    console.log(`Profile updated for Faculty ID: ${facultyId}`);
     res.json({ success: true, message: "Profile updated successfully" });
   } catch (err) {
     // 🎯 FIXED: This will now print the EXACT MySQL error in your VS Code terminal!
-    console.error("❌ Update Profile Error:", err.sqlMessage || err.message);
+    console.error("Update Profile Error:", err.sqlMessage || err.message);
     res.status(500).json({ success: false, message: "Server Error", error: err.sqlMessage });
   }
 };

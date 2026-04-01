@@ -4,7 +4,7 @@ exports.getStudentDashboard = async (req, res) => {
   try {
     const studentId = req.user.id;
 
-    // 🚀 High-speed parallel fetching
+    //  High-speed parallel fetching
     const [
       [profileRows], 
       [attendanceRows], 
