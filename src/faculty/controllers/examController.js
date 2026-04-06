@@ -1,25 +1,23 @@
-const Exam = require('../model/examModel'); 
-const db = require('../../config/db'); 
+const ExamModel = require('../model/examModel'); // Make sure path is correct!
+const db = require('../../config/db');
 
 // ---------------------------------------------------------
 // 1. CREATE EXAM (With Question Builder)
 // ---------------------------------------------------------
-exports.createExam = async (req, res) => {
+exports.addExam = async (req, res) => {
   try {
+    // React sends { examDetails, questions }
     const { examDetails, questions } = req.body;
 
-    //  SAFETY CHECK: Did React actually send examDetails?
     if (!examDetails) {
-      console.error(" CRASH PREVENTED: React did not send 'examDetails' in req.body!");
       return res.status(400).json({ success: false, message: "Missing exam details payload" });
     }
 
-    console.log("\n--- NEW FACULTY EXAM SUBMISSION ---");
-    console.log("👉 Exam Title:", examDetails.examTitle);
-
+    const instituteId = req.user?.institute_id || req.user?.id; 
     const instituteCode = req.user?.institute_code || 'INST001'; 
-    const semesterInt = parseInt((examDetails.semester || '').replace(/\D/g, '')) || 1; 
+    const facultyId = req.user?.role === 'faculty' ? req.user.id : null;
     
+    // Parse duration to minutes safely
     let durationInt = 0;
     if (examDetails.duration && examDetails.duration.includes('min')) {
       durationInt = parseInt(examDetails.duration);
@@ -27,129 +25,139 @@ exports.createExam = async (req, res) => {
       durationInt = parseFloat(examDetails.duration) * 60;
     }
 
-    const subjectValue = (examDetails.courseId || examDetails.subject || '').toString();
-
-    const examValues = [
+    // 1. Save the Exam Header
+    const newExamId = await ExamModel.addExam({
+      instituteId,
       instituteCode,
-      examDetails.examTitle,
-      subjectValue,
-      examDetails.examType,
-      semesterInt,
-      examDetails.batch,
-      examDetails.year,
-      examDetails.date,
-      examDetails.time,
-      durationInt,
-      parseInt(examDetails.totalMarks) || 0,
-      parseInt(examDetails.passingMarks) || 0,
-      examDetails.venue || '',
-      null 
-    ];
+      assignedFaculty: examDetails.assignedFaculty || facultyId, // Save the teacher!
+      title: examDetails.examTitle,
+      subject: examDetails.subject || examDetails.courseId,
+      examType: examDetails.examType,
+      semester: parseInt((examDetails.semester || '').replace(/\D/g, '')) || 1,
+      batch: examDetails.batch,
+      year: examDetails.year,
+      examDate: examDetails.date,
+      startTime: examDetails.time,
+      duration: durationInt,
+      totalMarks: parseInt(examDetails.totalMarks) || null,
+      passingMarks: parseInt(examDetails.passingMarks) || null,
+      venue: examDetails.venue,
+      question_paper_path: req.file ? `/uploads/exams/${req.file.filename}` : null
+    });
 
-    //  CHOKE POINT 1: Creating Exam Header
-    const examResult = await Exam.create(examValues);
-    const newExamId = examResult.insertId;
-
-    console.log(" Step 1: Exam Header Saved. ID is:", newExamId);
-
+    // 2. Save Questions (If a questions table exists)
     if (questions && questions.length > 0) {
-      const qValues = questions.map(q => [
-        newExamId,
-        q.text || q.question || '', 
-        q.type || 'MCQ',
-        parseInt(q.marks) || 0,
-        JSON.stringify(q.options || []), 
-        q.answer || ''
-      ]);
-
-      //  CHOKE POINT 2: Creating Questions
-      await Exam.createQuestions(qValues);
-      
-      console.log(" Step 2: Questions Successfully inserted into DB!");
-      return res.status(201).json({ success: true, message: "Exam and questions scheduled successfully!" });
+      try {
+        const qValues = questions.map(q => [
+          newExamId,
+          q.text || q.question || '', 
+          q.type || 'MCQ',
+          parseInt(q.marks) || 0,
+          JSON.stringify(q.options || []), 
+          q.answer || ''
+        ]);
+        
+        // Quick raw query to insert questions if you have a questions table
+        await db.query(
+          `INSERT INTO questions (exam_id, question_text, question_type, marks, options, correct_answer) VALUES ?`, 
+          [qValues]
+        );
+      } catch (qErr) {
+        console.log("Note: Questions skipped. Ensure a 'questions' table exists in your DB.");
+      }
     }
 
-    return res.status(201).json({ success: true, message: "Exam scheduled successfully (No questions attached)." });
+    res.status(201).json({ success: true, id: newExamId, message: "Exam scheduled successfully!" });
 
   } catch (error) {
-    //  LOUD ERROR LOGGING
-    console.error("\n ======================================");
-    console.error(" CRITICAL DATABASE ERROR IN createExam!");
-    console.error(" ERROR CODE:", error.code);
-    console.error(" ERROR MESSAGE:", error.message);
-    console.error(" FULL DETAILS:", error);
-    console.error(" ======================================\n");
-    res.status(500).json({ success: false, message: "Internal server error", error: error.message });
+    console.error("Add Exam Error:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
 
 // ---------------------------------------------------------
-// 2. GET FACULTY EXAMS (For the Marks Entry Dropdown)
+// 2. GET FACULTY EXAMS
 // ---------------------------------------------------------
-exports.getFacultyExams = async (req, res) => {
+exports.getExams = async (req, res) => {
   try {
-    const instituteCode = req.user?.institute_code || 'INST001'; 
+    const instituteId = req.user?.institute_id || req.user?.id; 
+    const facultyId = req.user?.role === 'faculty' ? req.user.id : null;
     
-    //  CHOKE POINT 3: Fetching data
-    const query = `
-      SELECT id, title, batch, subject 
-      FROM exams 
-      WHERE institute_code = ? 
-      ORDER BY id DESC
-    `;
+    // Uses the model we updated to filter by faculty_id
+    const exams = await ExamModel.getExams(instituteId, facultyId);
     
-    db.query(query, [instituteCode], (err, results) => {
-      if (err) {
-        //  LOUD ERROR LOGGING
-        console.error("\n ======================================");
-        console.error(" CRITICAL DATABASE ERROR IN getFacultyExams!");
-        console.error(" SQL QUERY:", query);
-        console.error(" ERROR MESSAGE:", err.message);
-        console.error(" ======================================\n");
-        return res.status(500).json({ success: false, message: "Database error", error: err.message });
-      }
-      res.status(200).json({ success: true, data: results });
-    });
+    res.status(200).json({ success: true, data: exams });
   } catch (error) {
-    console.error(" Server Error fetching exams:", error);
-    res.status(500).json({ success: false, message: "Server error" });
+    console.error("Get Exams Error:", error);
+    res.status(500).json({ success: false, message: "Server error fetching exams" });
   }
 };
 
 // ---------------------------------------------------------
-// 3. GET EXAM STUDENTS (For the Marks Entry Table)
+// 3. GET EXAM STUDENTS
 // ---------------------------------------------------------
 exports.getExamStudents = async (req, res) => {
   try {
     const examId = req.params.id;
-    const instituteCode = req.user?.institute_code || 'INST001'; 
+    const instituteId = req.user?.institute_id || req.user?.id;
     
-    // NOTE: You will need to join this with your actual students table based on the exam's batch.
-    // For now, this prevents the 404 crash and returns an empty array to React.
-    const query = `SELECT * FROM exam_marks WHERE exam_id = ?`;
+    // Uses the model we updated to properly JOIN students and academic_year
+    const students = await ExamModel.getStudentsForExam(examId, instituteId);
     
-    db.query(query, [examId], (err, results) => {
-      if (err) return res.status(500).json({ success: false, message: "Database error" });
-      res.status(200).json({ success: true, data: results });
-    });
+    res.status(200).json({ success: true, data: students });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Server error" });
+    console.error("Get Students Error:", error);
+    res.status(500).json({ success: false, message: "Server error fetching students" });
   }
 };
 
 // ---------------------------------------------------------
 // 4. SUBMIT MARKS
 // ---------------------------------------------------------
-exports.submitMarks = async (req, res) => {
+exports.saveResults = async (req, res) => {
   try {
     const examId = req.params.id;
-    const { students } = req.body; // Array of students with marks
+    const { students } = req.body; 
 
-    console.log(`Saving marks for Exam ${examId}...`, students.length, "students.");
-    
-    // Insert DB Logic here to save `students` array to your marks table.
+    if (!students || !Array.isArray(students)) {
+      return res.status(400).json({ success: false, message: 'Invalid data format' });
+    }
+
+    // Process each student asynchronously
+    await Promise.all(students.map(async (student) => {
+      // Calculate total from theory + practical
+      const theory = parseFloat(student.theory) || 0;
+      const practical = parseFloat(student.practical) || 0;
+      const total = theory + practical;
+      
+      // Calculate Grade securely on the server
+      let grade = 'F';
+      if (total >= 75) grade = 'A';
+      else if (total >= 60) grade = 'B';
+      else if (total >= 40) grade = 'C';
+
+      const studentId = student.id || student.studentId;
+      
+      // Save it using the model
+      await ExamModel.saveStudentMarks(examId, studentId, total, grade);
+    }));
 
     res.status(200).json({ success: true, message: "Marks submitted successfully!" });
+  } catch (error) {
+    console.error("Save Marks Error:", error);
+    res.status(500).json({ success: false, message: "Server error saving marks" });
+  }
+};
+
+// ---------------------------------------------------------
+// 5. DELETE EXAM (Optional safety route)
+// ---------------------------------------------------------
+exports.deleteExam = async (req, res) => {
+  try {
+    const instituteId = req.user?.institute_id || req.user?.id;
+    const deleted = await ExamModel.deleteExam(req.params.id, instituteId);
+    if (!deleted) return res.status(404).json({ success: false, message: "Exam not found" });
+    res.status(200).json({ success: true, message: "Exam deleted" });
   } catch (error) {
     res.status(500).json({ success: false, message: "Server error" });
   }

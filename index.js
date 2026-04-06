@@ -51,6 +51,7 @@ const notificationRoutes = require('./src/instituteadmin/routes/notificationRout
 const reportRoutes = require('./src/instituteadmin/routes/reportRoutes');
 const settingRoutes = require('./src/instituteadmin/routes/settingRoutes');
 const dashboardRoutes = require('./src/instituteadmin/routes/dashboardRoutes');
+const certificateRoutes = require('./src/instituteadmin/routes/certificateRoutes');
 
 // --- Faculty Portal ---
 const facultyAuthRoutes = require('./src/faculty/routes/authRoutes');
@@ -59,7 +60,7 @@ const facultyClassRoutes = require('./src/faculty/routes/classRoutes');
 const facultyAttendanceRoute = require('./src/faculty/routes/attendanceRoute');
 const facultyRoutes = require('./src/faculty/routes/facultyRoutes'); 
 const facultyExamRoutes = require('./src/faculty/routes/examRoutes'); 
-const facultyNotificationRoutes = require('./src/faculty/routes/notificationRoutes'); // 🎯 Neatly grouped here
+const facultyNotificationRoutes = require('./src/faculty/routes/notificationRoutes'); 
 
 // --- Student Portal ---
 const studentAuthRoutes = require('./src/student/routes/authRoutes');
@@ -68,8 +69,10 @@ const studentProfileRoutes = require('./src/student/routes/profileRoutes');
 const courseRoutes = require('./src/student/routes/courseRoutes'); 
 const studentAttendanceRoutes = require('./src/student/routes/attendanceRoutes');
 const studentAssignmentRoutes = require('./src/student/routes/assignmentRoutes');
-const studentExamRoutes = require('./src/student/routes/examRoutes'); // 🎯 1. Add this import
+const studentExamRoutes = require('./src/student/routes/examRoutes'); 
 const studentFeeRoutes = require('./src/student/routes/feeRoutes');
+// 🚀 NEW: Import Student Certificate Routes
+const studentCertificateRoutes = require('./src/student/routes/certificateRoutes');
 
 
 // ==========================================
@@ -90,11 +93,12 @@ app.use('/api/admin/batches', batchRoutes);
 app.use('/api/admin/expenses', expenseRoutes);
 app.use('/api/admin/salary', salaryRoutes);
 app.use('/api/admin/fees', feeRoutes);
-app.use('/api/admin/notification', notificationRoutes);
+app.use('/api/admin/notifications', notificationRoutes);
 app.use('/api/admin/report', reportRoutes);
 app.use('/api/admin/settings', settingRoutes);
 app.use('/api/admin/exams', adminExamRoutes);
 app.use('/api/admin/dashboard', dashboardRoutes); 
+app.use('/api/admin/certificates', certificateRoutes);
 
 
 // --- Faculty Mounting ---
@@ -104,7 +108,7 @@ app.use('/api/faculty/classes', facultyClassRoutes);
 app.use('/api/faculty/attendance', facultyAttendanceRoute);
 app.use('/api/faculty', facultyRoutes);
 app.use('/api/faculty/exams', facultyExamRoutes); 
-app.use('/api/faculty/notifications', facultyNotificationRoutes); // 🎯 Perfectly mounted
+app.use('/api/faculty/notifications', facultyNotificationRoutes); 
 
 // --- Student Mounting ---
 app.use('/api/student/auth', studentAuthRoutes);
@@ -113,8 +117,10 @@ app.use('/api/student/dashboard', studentDashboardRoutes);
 app.use('/api/student/courses', courseRoutes);
 app.use('/api/attendance', studentAttendanceRoutes);    
 app.use('/api/student/assignments', studentAssignmentRoutes);
-app.use('/api/student/exams', studentExamRoutes); // 🎯 2. Mount the route here!
+app.use('/api/student/exams', studentExamRoutes); 
 app.use('/api/student/fees', studentFeeRoutes);
+// 🚀 NEW: Mount Student Certificate Routes
+app.use('/api/student/certificates', studentCertificateRoutes);
 
 
 // ==========================================

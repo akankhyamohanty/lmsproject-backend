@@ -114,12 +114,14 @@ exports.deleteInstitute = async (req, res) => {
 // ============================================================================
 // 🚀 NEW: Get Full Institute Details (For Super Admin Dashboard Mini-View)
 // ============================================================================
+// ============================================================================
+// 🚀 UPDATED: Get Full Institute Details (For Super Admin Dashboard Mini-View)
+// ============================================================================
 exports.getFullInstituteDetails = async (req, res) => {
   const instId = req.params.id;
 
   try {
     // 1. Fetch the base institute record using your existing model logic 
-    // (This handles parsing the JSON columns like organisation, directors, etc.)
     const baseInstitute = await InstituteModel.findById(instId);
     
     if (!baseInstitute) {
@@ -127,31 +129,74 @@ exports.getFullInstituteDetails = async (req, res) => {
     }
 
     // 2. Fetch all related data simultaneously for maximum speed
-    // Note: Adjust table/column names if they differ slightly in your MySQL database
     const [
       [students],
       [faculty],
       [batches],
       [exams],
-      [expensesAgg],
-      [feesAgg]
+      [collections],
+      [placements],
+      [expensesAgg]
     ] = await Promise.all([
-      db.query(`SELECT id, name, roll_no AS roll, batch, status FROM students WHERE institute_id = ? LIMIT 15`, [instId]),
-      db.query(`SELECT id, name, designation, dept AS subject, status FROM faculty WHERE institute_id = ? LIMIT 15`, [instId]),
+      // Students table
       db.query(`
-        SELECT id, name, course, status, 
-        (SELECT COUNT(*) FROM students WHERE batch = batches.name AND institute_id = ?) AS studentCount 
-        FROM batches WHERE institute_id = ? LIMIT 15
-      `, [instId, instId]),
-      db.query(`SELECT id, title, exam_date AS date, batch, subject, status FROM exams WHERE institute_id = ? ORDER BY exam_date DESC LIMIT 10`, [instId]),
-      db.query(`SELECT SUM(amount) AS totalExpenses FROM expenses WHERE institute_id = ?`, [instId]),
-      db.query(`SELECT SUM(paid_amount) AS totalRevenue FROM fee_payments WHERE institute_id = ?`, [instId]) // Assuming your table is fee_payments
+        SELECT 
+          id, 
+          CONCAT(first_name, ' ', IFNULL(last_name, '')) AS name, 
+          roll_no AS roll, 
+          standard_name AS batch, 
+          status 
+        FROM students 
+        WHERE institute_id = ? 
+        LIMIT 15
+      `, [instId]),
+      
+      // FIXED: Reverted back to 'dept' instead of 'department'
+      db.query(`
+        SELECT 
+          id, 
+          name, 
+          designation, 
+          dept AS subject, 
+          status 
+        FROM faculty 
+        WHERE institute_id = ? 
+        LIMIT 15
+      `, [instId]),
+      
+      // Classes/Batches table 
+      db.query(`
+        SELECT 
+          id, 
+          course_name AS name, 
+          course_name AS course, 
+          status, 
+          (SELECT COUNT(*) FROM students WHERE class_id = classes.id) AS studentCount 
+        FROM classes 
+        WHERE institute_id = ? 
+        LIMIT 15
+      `, [instId]).catch(() => [[ ]]),
+      
+      // Exams 
+      db.query(`SELECT id, title, exam_date AS date, class_id AS batch, subject_id AS subject, status FROM exams WHERE institute_id = ? ORDER BY exam_date DESC LIMIT 10`, [instId]).catch(() => [[ ]]),
+      
+      // Collections
+      db.query(`SELECT id, receipt_no, student_name, amount, payment_date AS date, status FROM fee_collections WHERE institute_id = ? ORDER BY payment_date DESC LIMIT 10`, [instId]).catch(() => [[ ]]),
+      
+      // Placements
+      db.query(`SELECT id, student_name, company, role, package_lpa AS package FROM placements WHERE institute_id = ? ORDER BY id DESC LIMIT 10`, [instId]).catch(() => [[ ]]),
+
+      // Financials (Expenses)
+      db.query(`SELECT SUM(amount) AS totalExpenses FROM expenses WHERE institute_id = ?`, [instId]).catch(() => [[{ totalExpenses: 0 }]])
     ]);
+
+    // Calculate total revenue from the collections array
+    const revenueCollected = collections.reduce((sum, record) => sum + (Number(record.amount) || 0), 0);
 
     // 3. Mold the data into the exact format the React UI expects
     const fullDetails = {
-      ...baseInstitute, // Spreads organisation, directors, etc.
-      name: baseInstitute.organisation?.name || baseInstitute.name, // Safely extract name from JSON if needed
+      ...baseInstitute, 
+      name: baseInstitute.organisation?.name || baseInstitute.name, 
       city: baseInstitute.organisation?.city || "",
       
       // Lists for the tables
@@ -159,15 +204,19 @@ exports.getFullInstituteDetails = async (req, res) => {
       facultyList: faculty,
       batchesList: batches,
       examsList: exams,
+      collectionsList: collections,
+      placementsList: placements,
       
       // Stats for the top row pills
       totalStudents: students.length, 
       totalFaculty: faculty.length,
       totalBatches: batches.length,
+      totalPlacements: placements.length,
       
       // Financials
       totalExpenses: expensesAgg[0]?.totalExpenses || 0,
-      revenueCollected: feesAgg[0]?.totalRevenue || 0,
+      revenueCollected: revenueCollected,
+      totalCollections: revenueCollected, 
     };
 
     // 4. Send it to the React Dashboard

@@ -3,16 +3,23 @@ const router = express.Router();
 const profileController = require('../controllers/profileController');
 const { verifyFaculty } = require('../Middlewares/authMiddleware');
 
-// This handles GET http://localhost:5000/api/faculty/profile
-router.get('/', verifyFaculty, profileController.getProfile); 
+/**
+ * 🔐 ALL ROUTES BELOW REQUIRE FACULTY AUTHENTICATION
+ * The 'verifyFaculty' middleware ensures a valid cookie/token exists
+ * and attaches the faculty user object to 'req.user'.
+ */
 
-// This handles GET http://localhost:5000/api/faculty/profile/me (Backup for your React call)
+// 📍 GET: Fetch the logged-in faculty's profile 
+// Endpoints: GET /api/faculty/profile OR GET /api/faculty/profile/me
+router.get('/', verifyFaculty, profileController.getProfile); 
 router.get('/me', verifyFaculty, profileController.getProfile); 
 
-// This handles PUT http://localhost:5000/api/faculty/profile/update
+// 📍 PUT: Update profile details (Name, Mobile, Skills, etc.)
+// Endpoint: PUT /api/faculty/profile/update
 router.put('/update', verifyFaculty, profileController.updateProfile);
 
-// This handles PUT http://localhost:5000/api/faculty/profile/change-password
+// 📍 PUT: Security - Change account password
+// Endpoint: PUT /api/faculty/profile/change-password
 router.put('/change-password', verifyFaculty, profileController.changePassword);
 
 module.exports = router;

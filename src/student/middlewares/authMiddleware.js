@@ -1,12 +1,14 @@
 const jwt = require('jsonwebtoken');
 
 const verifyStudent = (req, res, next) => {
-  // 1. Get token from the Authorization header (Format: Bearer <token>)
-  const authHeader = req.headers.authorization;
-  const token = authHeader && authHeader.split(' ')[1];
+  // 1. Get token from cookies OR the Authorization header
+  // This makes it compatible with both your React web app (cookies) and mobile apps (headers)
+  const token = (req.cookies && req.cookies.token) || 
+                (req.headers.authorization && req.headers.authorization.split(' ')[1]);
 
   if (!token) {
-    return res.statu (401).json({ 
+    // 🚀 FIXED: Changed res.statu to res.status
+    return res.status(401).json({ 
       success: false, 
       message: 'Access Denied. No token provided.' 
     });

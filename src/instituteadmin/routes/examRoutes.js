@@ -33,7 +33,17 @@ router.post('/', verifyToken, upload.single('question_paper'), examController.ad
 
 router.delete('/:id', verifyToken, examController.deleteExam);
 
-// 🚀 NEW: Route specifically for downloading the PDF
+// Route specifically for downloading the PDF
 router.get('/download/:id', verifyToken, examController.downloadPaper);
+
+// ==========================================
+// 🚀 NEW: MARKS ENTRY ROUTES
+// ==========================================
+
+// 1. Fetch students for a specific exam's batch
+router.get('/:id/students', verifyToken, examController.getExamStudents);
+
+// 2. Save the array of student marks
+router.post('/results', verifyToken, examController.saveResults);
 
 module.exports = router;
