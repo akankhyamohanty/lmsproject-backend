@@ -2,13 +2,13 @@ const jwt = require('jsonwebtoken');
 
 /**
  * Middleware to verify JWT Token
- * This protects your routes from unauthorized access
+ * Protects routes and handles Super Admin Impersonation (Master Key)
  */
 const verifyToken = (req, res, next) => {
-  // 1. Get the token from the 'Authorization' header
-  // It usually looks like: "Bearer <token_string>"
+  // 1. Get the token from the 'Authorization' header or cookies
   const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
+  // Added optional cookie check as a fallback safety measure
+  const token = (authHeader && authHeader.split(' ')[1]) || req.cookies?.token;
 
   // 2. If there is no token, deny access
   if (!token) {
@@ -20,15 +20,34 @@ const verifyToken = (req, res, next) => {
 
   try {
     // 3. Verify the token using your Secret Key
-    // Make sure 'JWT_SECRET' is defined in your .env file!
     const secret = process.env.JWT_SECRET || 'fallback_secret_key';
     const decoded = jwt.verify(token, secret);
 
     // 4. Attach the user data to the request object (req.user)
-    // This is how the controller knows the admin's ID and Institute Code
     req.user = decoded;
 
-    // 5. Move to the next function (the Controller)
+    // ==========================================
+    // 🚀 5. THE MASTER KEY: IMPERSONATION LOGIC
+    // ==========================================
+    // Check if the logged-in user is a Super Admin
+    if (req.user.role === 'superadmin' || req.user.role === 'super_admin') {
+      
+      // Look for the special ghost header sent by the frontend
+      const managedInstituteId = req.headers['x-managed-institute-id'];
+      
+     if (managedInstituteId) {
+  // ✅ Parse to integer so SQL comparisons work correctly
+  req.user.institute_id = parseInt(managedInstituteId);
+  req.instituteId = parseInt(managedInstituteId);
+}
+      
+    } else {
+      // Normal Institute Admin/Faculty logic: just pass along their real ID
+      req.instituteId = req.user.institute_id || req.user.instituteCode; 
+    }
+    // ==========================================
+
+    // 6. Move to the next function (the Controller)
     next();
   } catch (err) {
     console.error("JWT Verification Error:", err.message);

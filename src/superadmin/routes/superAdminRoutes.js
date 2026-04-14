@@ -1,12 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const superAdminController = require('../controllers/superAdminController');
+const protect = require('../middlewares/authMiddlewares');
 
-// Ensure you use your actual authentication middleware here
-// const { verifyToken } = require('../../middlewares/authMiddleware'); 
-
-// Dashboard Routes
-router.get('/dashboard-stats', superAdminController.getDashboardStats);
-router.get('/institutes', superAdminController.getInstitutes);
+router.get('/dashboard-stats', protect, superAdminController.getDashboardStats);
+router.get('/institutes', protect, superAdminController.getInstitutes);
+router.get('/institutes/:id/full-details', protect, superAdminController.getInstituteFullDetails); // ← THIS WAS MISSING
 
 module.exports = router;
