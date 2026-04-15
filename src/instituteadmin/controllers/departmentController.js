@@ -1,19 +1,33 @@
 const DepartmentModel = require('../models/departmentModel');
 
+/**
+ * 🛠️ Helper: Sanitize Input Data
+ * Converts empty strings to null. This prevents MySQL "Incorrect integer value" 
+ * errors for the 'head' (hodId) column and ensures optional strings are stored as NULL.
+ */
+const sanitizeData = (data) => {
+    const sanitized = { ...data };
+    Object.keys(sanitized).forEach(key => {
+        if (sanitized[key] === '' || sanitized[key] === undefined || sanitized[key] === null) {
+            sanitized[key] = null;
+        }
+    });
+    return sanitized;
+};
+
 const departmentController = {
     /**
      * 🔍 Get all departments
-     * Uses req.instituteId from the verifyToken middleware 
-     * (Handles normal login + Super Admin impersonation)
      */
     getDepartments: async (req, res) => {
         try {
-            const instituteId = req.instituteId;
+            // 🚀 Logic: Checks both req.instituteId and req.user.code for compatibility with your middleware
+            const instituteId = req.instituteId || (req.user && req.user.code);
             
             if (!instituteId) {
                 return res.status(400).json({ 
                     success: false, 
-                    message: "Institute context is required." 
+                    message: "Institute context is missing. Please log in again." 
                 });
             }
 
@@ -34,27 +48,30 @@ const departmentController = {
 
     /**
      * ✨ Create a new Department
-     * Expected body: { name, hodId, leadRole, category, type, description, roomNumber }
      */
     createDepartment: async (req, res) => {
         try {
-            const instituteId = req.instituteId;
-            const { name, category, leadRole } = req.body;
+            const instituteId = req.instituteId || (req.user && req.user.code);
+            const { name, category } = req.body; 
 
-            // Strict Validation
+            // 1. Context Validation
             if (!instituteId) {
                 return res.status(400).json({ success: false, message: "Institute context missing" });
             }
             
-            // 🚀 Require leadRole alongside name and category
-            if (!name || !category || !leadRole) {
+            // 2. Strict DB Field Validation (Required by your Schema)
+            if (!name || !category) {
                 return res.status(400).json({ 
                     success: false, 
-                    message: "Department name, category, and lead role are required" 
+                    message: "Department Name and Category are mandatory." 
                 });
             }
 
-            const insertId = await DepartmentModel.create(instituteId, req.body);
+            // 3. 🚀 Sanitize req.body (Fixes empty HOD, Code, or Room strings)
+            const cleanData = sanitizeData(req.body);
+
+            // 4. Call Model
+            const insertId = await DepartmentModel.create(instituteId, cleanData);
             
             res.status(201).json({ 
                 success: true, 
@@ -62,10 +79,11 @@ const departmentController = {
                 insertId 
             });
         } catch (error) {
-            console.error("❌ Create Department Error:", error.message);
+            console.error("❌ Create Department Error:", error);
+            // Returns the exact SQL error (e.g., missing column) to the React frontend
             res.status(500).json({ 
                 success: false, 
-                message: "Server error while creating department" 
+                message: `Database Error: ${error.sqlMessage || error.message}` 
             });
         }
     },
@@ -75,22 +93,24 @@ const departmentController = {
      */
     updateDepartment: async (req, res) => {
         try {
-            const instituteId = req.instituteId;
+            const instituteId = req.instituteId || (req.user && req.user.code);
             const departmentId = req.params.id;
 
             if (!instituteId || !departmentId) {
                 return res.status(400).json({ 
                     success: false, 
-                    message: "Missing required parameters for update" 
+                    message: "Missing ID or Institute context for update" 
                 });
             }
 
-            const affectedRows = await DepartmentModel.update(departmentId, instituteId, req.body);
+            const cleanData = sanitizeData(req.body);
+
+            const affectedRows = await DepartmentModel.update(departmentId, instituteId, cleanData);
             
             if (affectedRows === 0) {
                 return res.status(404).json({ 
                     success: false, 
-                    message: "Department not found or no changes were made" 
+                    message: "No changes made or department not found" 
                 });
             }
 
@@ -99,27 +119,26 @@ const departmentController = {
                 message: "Department updated successfully" 
             });
         } catch (error) {
-            console.error("❌ Update Department Error:", error.message);
+            console.error("❌ Update Department Error:", error);
             res.status(500).json({ 
                 success: false, 
-                message: "Server error while updating department" 
+                message: `Database Error: ${error.sqlMessage || error.message}` 
             });
         }
     },
 
     /**
      * 🗑️ Delete a Department
-     * Scoped to instituteId for security
      */
     deleteDepartment: async (req, res) => {
         try {
-            const instituteId = req.instituteId;
+            const instituteId = req.instituteId || (req.user && req.user.code);
             const departmentId = req.params.id;
 
             if (!instituteId || !departmentId) {
                 return res.status(400).json({ 
                     success: false, 
-                    message: "Missing required parameters for deletion" 
+                    message: "Delete parameters missing" 
                 });
             }
 
@@ -128,7 +147,7 @@ const departmentController = {
             if (affectedRows === 0) {
                 return res.status(404).json({ 
                     success: false, 
-                    message: "Department not found or you do not have permission to delete it" 
+                    message: "Delete failed: Department not found" 
                 });
             }
             
